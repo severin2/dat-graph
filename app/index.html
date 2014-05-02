@@ -1,0 +1,87 @@
+<!doctype html>
+<!--[if lt IE 7]>
+<html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>
+<html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>
+<html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!-->
+<html class="no-js"> <!--<![endif]-->
+<head>
+    <meta charset="utf-8">
+    <title>grapher</title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width">
+    <link href="favicon.ico" rel="shortcut icon" type="image/x-icon"/>
+    <!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
+    <!-- build:css styles/vendor.css -->
+    <link rel="stylesheet" type="text/css" href="bower_components/bootstrap/dist/css/bootstrap.css"/>
+    <!-- bower:css -->
+    <link rel="stylesheet" href="../bower_components/bootstrap/dist/css/bootstrap.css" />
+    <!-- endbower -->
+    <!-- endbuild -->
+    <!-- build:css({.tmp,app}) styles/main.css -->
+    <link rel="stylesheet" href="styles/main.css">
+    <!-- endbuild -->
+</head>
+<body ng-app="graphApp">
+<!--[if lt IE 7]>
+<p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your
+    experience.</p>
+<![endif]-->
+
+<!-- Add your site or application content here -->
+<div class="scope-container" ng-controller="graphController">
+    <div class="outside">
+
+        <p class="h1">Workflow Grapher -> upload a workflow</p>
+
+    </div>
+
+    <div class="edit" ng-show="screen === 0">
+        <textarea class="main" ng-model="workflowText"></textarea>
+    </div>
+
+    <div class="edit" ng-show="screen === 1">
+        <workflow-graph></workflow-graph>
+    </div>
+    <div class="outside row">
+        <input class="btn btn-link btn-lg col-sm-4" type="file" my-file-select="onFileSelect($files)"/>
+        <!--<progress class="col-sm-1" value="{{progress}}"></progress>-->
+        <button class="btn btn-link btn-lg col-sm-2" ng-click="screen = 0">show editor</button>
+        <button class="btn btn-link btn-lg col-sm-2" ng-click="screen = 1">show graph</button>
+        <button class="btn btn-link btn-lg col-sm-2" ng-click="resetGraph()">reset graph</button>
+        <button class="btn btn-link btn-lg col-sm-2" ng-click='showNodeDialog()'>open dialog</button>
+    </div>
+    <modal-dialog ng-show='showDialog' width='600px' height='90%'>
+        <textarea class="dialog" ng-model="dialogText"></textarea>
+    </modal-dialog>
+</div>
+
+<!--[if lt IE 9]>
+<script src="bower_components/es5-shim/es5-shim.js"></script>
+<script src="bower_components/json3/lib/json3.min.js"></script>
+<![endif]-->
+
+<!-- build:js scripts/vendor.js -->
+<!-- bower:js -->
+<script src="../bower_components/jquery/dist/jquery.js"></script>
+<script src="../bower_components/es5-shim/es5-shim.js"></script>
+<script src="../bower_components/angular/angular.js"></script>
+<script src="../bower_components/json3/lib/json3.min.js"></script>
+<script src="../bower_components/bootstrap/dist/js/bootstrap.js"></script>
+<script src="../bower_components/d3/d3.js"></script>
+<!-- endbower -->
+<!-- endbuild -->
+
+<!-- build:js({.tmp,app}) scripts/scripts.js -->
+<script src="scripts/app.js"></script>
+<script src="scripts/controllers/graphcontroller.js"></script>
+<script src="scripts/directives/graphdirective.js"></script>
+<script src="scripts/directives/modaldirective.js"></script>
+<script src="scripts/directives/uploaddirective.js"></script>
+<script src="scripts/services/uploadservice.js"></script>
+<script src="scripts/services/xmlworkflowservice.js"></script>
+<!-- endbuild -->
+</body>
+</html>

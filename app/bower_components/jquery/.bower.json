@@ -1,0 +1,37 @@
+{
+  "name": "jquery",
+  "version": "1.11.1-rc2",
+  "main": "dist/jquery.js",
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "build",
+    "speed",
+    "test",
+    "*.md",
+    "AUTHORS.txt",
+    "Gruntfile.js",
+    "package.json"
+  ],
+  "devDependencies": {
+    "sizzle": "1.10.19",
+    "requirejs": "2.1.10",
+    "qunit": "1.14.0",
+    "sinon": "1.8.1"
+  },
+  "keywords": [
+    "jquery",
+    "javascript",
+    "library"
+  ],
+  "homepage": "https://github.com/jquery/jquery",
+  "_release": "1.11.1-rc2",
+  "_resolution": {
+    "type": "version",
+    "tag": "1.11.1-rc2",
+    "commit": "b50c9a8d92f94f310138f4528e3a36b5336539a1"
+  },
+  "_source": "git://github.com/jquery/jquery.git",
+  "_target": "~1.11.0",
+  "_originalSource": "jquery"
+}

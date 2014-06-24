@@ -53,8 +53,8 @@ textarea.dialog {
 
 circle.node {
     cursor: pointer;
-    stroke: #3182bd;
-    stroke-width: 1.5px;
+    stroke: white;
+    stroke-width: 3px;
 }
 
 circle.node.def {

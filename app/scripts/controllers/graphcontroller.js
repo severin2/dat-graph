@@ -3,7 +3,11 @@
 angular.module('graphApp')
     .controller('graphController', function ($scope, fileReader, xmlWorkflowParser) {
 
-        $scope.dialogText = 'not set';
+        $scope.dialogModel = {
+            text : 'not set',
+            show : false,
+            type : 'step'
+        }
 
         $scope.graphData = {
             nodes: [
@@ -21,24 +25,18 @@ angular.module('graphApp')
             ]
         };
 
-        $scope.showDialog = false;
-
         $scope.screen = 1;
 
         $scope.workflowText = JSON.stringify($scope.graphData);
 
         $scope.showNodeDialog = function (element) {
-                if (element && element.content) {
-                    $scope.dialogText = element.content;
-                } else {
-                    $scope.dialogText = 'no content';
-                }
-
-                $scope.showDialog = true;
+            $scope.dialogModel.type = element.type;
+            $scope.dialogModel.text = element && element.content ? element.content : 'no content';
+            $scope.dialogModel.show = true;
             };
 
         $scope.hideNodeDialog = function () {
-            $scope.showDialog = false;
+            $scope.dialogModel.show = false;
         }
 
         $scope.getFile = function (file) {

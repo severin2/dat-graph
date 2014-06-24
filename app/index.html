@@ -53,8 +53,14 @@
         <button class="btn btn-link btn-lg col-sm-2" ng-click="resetGraph()">reset graph</button>
         <button class="btn btn-link btn-lg col-sm-2" ng-click='showNodeDialog()'>open dialog</button>
     </div>
-    <modal-dialog ng-show='showDialog' width='600px' height='90%'>
-        <textarea class="dialog" ng-model="dialogText"></textarea>
+    <modal-dialog ng-show='dialogModel.show' width='600px' height='90%'>
+        <div ng-show="dialogModel.type == 'step'">
+            <textarea class="dialog" ng-model="dialogModel.text"></textarea>
+        </div>
+
+        <div ng-show="dialogModel.type == 'def'">
+            <label for="input1">content</label><input id="input1" type="text" ng-model="dialogModel.text" />
+        </div>
     </modal-dialog>
 </div>
 

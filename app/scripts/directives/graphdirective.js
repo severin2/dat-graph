@@ -172,8 +172,6 @@ angular.module('graphApp')
 
                 function toggleNodeDialogAndApply(element) {
 
-                    //console.log('clicked: ' + JSON.stringify(element));
-
                     if (d3.event.defaultPrevented) {
                         return;
                     } else {

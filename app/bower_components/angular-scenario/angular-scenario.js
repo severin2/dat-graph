@@ -10715,8 +10715,8 @@ function shallowCopy(src, dst) {
  *
  * Scope and DOMWindow objects are being compared only by identify (`===`).
  *
- * @param {*} o1 Object or value to compare.
- * @param {*} o2 Object or value to compare.
+ * @param {*} o1 Object or value to compareJSO.
+ * @param {*} o2 Object or value to compareJSO.
  * @returns {boolean} True if arguments are equal.
  */
 function equals(o1, o2) {
@@ -21430,7 +21430,7 @@ function $RootScopeProvider(){
        * (via {@link ng.$rootScope.Scope#$evalAsync $evalAsync}) to initialize the
        * watcher. In rare cases, this is undesirable because the listener is called when the result
        * of `watchExpression` didn't change. To detect this scenario within the `listener` fn, you
-       * can compare the `newVal` and `oldVal`. If these two values are identical (`===`) then the
+       * can compareJSO the `newVal` and `oldVal`. If these two values are identical (`===`) then the
        * listener was called due to initialization.
        *
        * The example below contains an illustration of using a function as your $watch listener
@@ -23923,7 +23923,7 @@ function $FilterProvider($provide) {
  *   Can be one of:
  *
  *     - `function(actual, expected)`:
- *       The function will be given the object value and the predicate value to compare and
+ *       The function will be given the object value and the predicate value to compareJSO and
  *       should return true if the item should be included in filtered result.
  *
  *     - `true`: A shorthand for `function(actual, expected) { return angular.equals(expected, actual)}`.
@@ -31004,7 +31004,7 @@ angular.scenario.dsl = angular.scenario.dsl || function(name, fn) {
 
 /**
  * Defines a new matcher for use with the expects() statement. The value
- * this.actual (like in Jasmine) is available in your matcher to compare
+ * this.actual (like in Jasmine) is available in your matcher to compareJSO
  * against. Your function should return a boolean. The future is automatically
  * created for you.
  *

@@ -3,11 +3,12 @@
 angular.module('graphApp')
     .controller('graphController', function ($scope, fileReader, xmlWorkflowParser) {
 
-        $scope.dialogModel = {
-            text : 'not set',
-            show : false,
-            type : 'step'
-        }
+
+        $scope.showDialog = false;
+        $scope.selectedNodeData = { };
+        $scope.selectedNodeKeys = [];
+
+        $scope.workflowText = "when you upload a workflow, the file contents will display here";
 
         $scope.graphData = {
             nodes: [
@@ -19,32 +20,36 @@ angular.module('graphApp')
                 {name: 6}
             ],
             links: [
-                {source: 0, target: 1},
-                {source: 1, target: 2},
-                {source: 2, target: 3}
+                {source: 0, target: 1, condition: 'Ω'},
+                {source: 1, target: 2, condition: 'ß'},
+                {source: 2, target: 3, condition: 'π'}
             ]
         };
 
         $scope.screen = 1;
 
-        $scope.workflowText = JSON.stringify($scope.graphData);
-
         $scope.showNodeDialog = function (element) {
-            $scope.dialogModel.type = element.type;
-            $scope.dialogModel.text = element && element.content ? element.content : 'no content';
-            $scope.dialogModel.show = true;
-            };
+
+            $scope.selectedNodeData = element;
+            $scope.selectedNodeKeys = [];
+
+            for(var key in element) {
+                $scope.selectedNodeKeys.push(key);
+            }
+            $scope.showDialog = true;
+        };
 
         $scope.hideNodeDialog = function () {
-            $scope.dialogModel.show = false;
+            $scope.showDialog = false;
         }
 
         $scope.getFile = function (file) {
             $scope.progress = 0;
             fileReader.readFileAsText(file, $scope)
                 .then(function (result) {
-                    //console.log('read file ' + file.name);
+
                     $scope.workflowText = result;
+                    //console.log('read file ' + file.name);
 
                     var fileExt = getExtensionFromFileName(file.name);
 
@@ -90,6 +95,7 @@ angular.module('graphApp')
             return array[array.length - 1];
 
         }
+
     });
 
 

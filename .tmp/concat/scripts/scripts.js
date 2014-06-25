@@ -6,11 +6,9 @@ angular.module('graphApp').controller('graphController', [
   'fileReader',
   'xmlWorkflowParser',
   function ($scope, fileReader, xmlWorkflowParser) {
-    $scope.dialogModel = {
-      text: 'not set',
-      show: false,
-      type: 'step'
-    };
+    $scope.showDialog = false;
+    $scope.selectedNodeIndex = 0;
+    $scope.workflowText = 'when you upload a workflow, the file contents will display here';
     $scope.graphData = {
       nodes: [
         { name: 1 },
@@ -23,33 +21,40 @@ angular.module('graphApp').controller('graphController', [
       links: [
         {
           source: 0,
-          target: 1
+          target: 1,
+          condition: '\u03a9'
         },
         {
           source: 1,
-          target: 2
+          target: 2,
+          condition: '\xdf'
         },
         {
           source: 2,
-          target: 3
+          target: 3,
+          condition: '\u03c0'
         }
       ]
     };
     $scope.screen = 1;
-    $scope.workflowText = JSON.stringify($scope.graphData);
     $scope.showNodeDialog = function (element) {
-      $scope.dialogModel.type = element.type;
-      $scope.dialogModel.text = element && element.content ? element.content : 'no content';
-      $scope.dialogModel.show = true;
+      var nodes = $scope.graphData.nodes;
+      for (var i = 0; i < nodes; i++) {
+        if (compareJSO(n, element)) {
+          $scope.selectedNodeIndex = i;
+          break;
+        }
+      }
+      $scope.showDialog = true;
     };
     $scope.hideNodeDialog = function () {
-      $scope.dialogModel.show = false;
+      $scope.showDialog = false;
     };
     $scope.getFile = function (file) {
       $scope.progress = 0;
       fileReader.readFileAsText(file, $scope).then(function (result) {
-        //console.log('read file ' + file.name);
         $scope.workflowText = result;
+        //console.log('read file ' + file.name);
         var fileExt = getExtensionFromFileName(file.name);
         if (fileExt && fileExt === 'json') {
           // TODO verify by trying to parse to json
@@ -191,7 +196,6 @@ angular.module('graphApp').directive('workflowGraph', [function () {
           scope.restartGraph([], []);
         };
         function toggleNodeDialogAndApply(element) {
-          //console.log('clicked: ' + JSON.stringify(element));
           if (d3.event.defaultPrevented) {
             return;
           } else {
@@ -219,16 +223,16 @@ angular.module('graphApp').directive('modalDialog', function () {
     replace: true,
     transclude: true,
     link: function (scope, element, attrs) {
-      scope.dialogModel.style = {};
+      scope.modalStyle = {};
       if (attrs.width)
-        scope.dialogModel.style.width = attrs.width;
+        scope.modalStyle.width = attrs.width;
       if (attrs.height)
-        scope.dialogModel.style.height = attrs.height;
+        scope.modalStyle.height = attrs.height;
       scope.hideModal = function () {
-        scope.dialogModel.show = false;
+        scope.showDialog = false;
       };
     },
-    template: '<div class=\'ng-modal\'> ' + '<div class=\'ng-modal-overlay\' ng-click=\'hideModal()\'></div>' + '<div class=\'ng-modal-dialog\' ng-style=\'dialogModel.style\'>' + '<div class=\'ng-modal-close\' ng-click=\'hideModal()\'>X</div>' + '<div class=\'ng-modal-dialog-content\' ng-transclude></div>' + '</div>' + '</div>'
+    template: '<div class=\'ng-modal\'> ' + '<div class=\'ng-modal-overlay\' ng-click=\'hideModal()\'></div>' + '<div class=\'ng-modal-dialog\' ng-style=\'modalStyle\'>' + '<div class=\'ng-modal-close\' ng-click=\'hideModal()\'>X</div>' + '<div class=\'ng-modal-dialog-content\' ng-transclude></div>' + '</div>' + '</div>'
   };
 });
 'use strict';
@@ -302,51 +306,118 @@ angular.module('graphApp').factory('xmlWorkflowParser', [
         nodes: [],
         links: []
       };
-      var serial = new XMLSerializer(), parser = new DOMParser(), xml = parser.parseFromString(workflowText, 'text/xml'), doc = xml.documentElement;
-      var list = doc.childNodes, initial = getNamedChildren(doc, 'initialStepName')[0];
-      addInitialStep(initial.textContent, null, scope);
+      var parser = new DOMParser(), xml = parser.parseFromString(workflowText, 'text/xml'), doc = xml.documentElement;
+      var list = doc.childNodes,
+        // there is only every one initial step element
+        initial = getNamedChildren(doc, 'initialStepName')[0];
+      // add the initial step name
+      addInitialStep(initial.textContent, scope);
       var contextDataDefs = xml.getElementsByTagName('contextDataDef');
       for (var i = 0; i < contextDataDefs.length; i++) {
-        var def = contextDataDefs.item(i), defName = def.getAttribute('name');
-        addContextDataDefNode(defName, serial.serializeToString(def), scope);
+        var def = contextDataDefs.item(i), defObj = attributesToObj(def);
+        alert('data def: ' + JSON.stringify(defObj));
+        addContextDataDefNode(defObj, scope);
       }
       // for each child of workflow
       for (var i = 0; i < list.length; i++) {
         var step = list.item(i);
+        // TODO what was the purpose of this check for # ?
         if (!step.nodeName.match(/^#/)) {
-          var stepName = step.getAttribute('name');
+          var stepObj = attributesToObj(step);
+          alert('step obj: ' + JSON.stringify(stepObj));
           var transitions = getNamedChildren(step, 'transition');
-          // if it has transitions, treat as a step
-          if (transitions.length > 0) {
-            transitions.forEach(function (trans) {
-              var condition = trans.getAttribute('condition'), targetStepNameNode = getNamedChildren(trans, 'targetStepName')[0], targetName = targetStepNameNode.textContent, sourceContent = getStepByStepName(list, stepName), sourceIndex = addOrGetNodeIndex(stepName, serial.serializeToString(sourceContent), scope), targetContent = getStepByStepName(list, targetName), targetIndex = addOrGetNodeIndex(targetName, serial.serializeToString(targetContent), scope);
-              addLink(sourceIndex, targetIndex, condition, scope);  //console.log('transition from (' + stepName + ') to (' + targetName + ') if ' + condition);
-            });
-          }
+          // for every transition, connect the nodes
+          transitions.forEach(function (trans) {
+            var condition = trans.getAttribute('condition'), targetStepNameNode = getNamedChildren(trans, 'targetStepName')[0], targetName = targetStepNameNode.textContent, targetObj = getNodeObjByName(targetName, scope);
+            alert('tafet obj: ' + JSON.stringify(targetObj));
+            var sourceIndex = addStepNode(stepObj, scope), targetIndex = addOrGetNodeIndex(targetObj, scope);
+            addLink(sourceIndex, targetIndex, condition, scope);
+          });
         }
       }
       deferred.resolve('success');
     }
-    function addInitialStep(name, content, scope) {
-      var index = addOrGetNodeIndex(name, content, scope);
+    /**
+         *
+         * @param name
+         * @param scope
+         */
+    function getNodeObjByName(name, scope) {
+      var nodes = scope.graphData.nodes;
+      nodes.forEach(function (node) {
+        if (node.name == name) {
+        }
+        return node;
+      });
+    }
+    /**
+         *
+         * given an xml element, returns a JS object whose object properties
+         * are the attributes of that xml element
+         *
+         * @param el
+         * @returns {{}}
+         */
+    function attributesToObj(el) {
+      var atts = el.attributes, obj = {};
+      for (var j = 0; j < atts.length; j++) {
+        obj[atts[j].name] = atts[j].value;
+      }
+      return obj;
+    }
+    /**
+         *
+         *
+         * @param nameArg
+         * @param scope
+         */
+    function addInitialStep(nameArg, scope) {
+      var index = addStepNode({ name: nameArg }, scope);
       scope.graphData.nodes[index].initial = true;
     }
-    function addContextDataDefNode(name, content, scope) {
-      scope.graphData.nodes.push({
-        'name': name,
-        'content': content,
+    /**
+         * add a contextDataDef to the nodes
+         *
+         * @param obj
+         * @param scope
+         * @returns {*}
+         */
+    function addContextDataDefNode(obj, scope) {
+      return addOrGetNodeIndex({
+        'name': obj.name || 'no name',
+        'dataType': obj.dataType || 'no data type',
+        'defaultDataExpression': obj.defaultDataExpression || 'no default data expression',
         'type': 'def'
       });
     }
-    function getStepByStepName(list, name) {
-      for (var i = 0; i < list.length; i++) {
-        var n = list.item(i);
-        if (n.attributes && n.getAttribute('name') === name) {
-          return n;
-        }
-      }
-      return null;
+    /**
+         * add a step to the nodes
+         *
+         * @param obj
+         * @param scope
+         * @returns {*}
+         */
+    function addStepNode(obj, scope) {
+      return addOrGetNodeIndex({
+        'name': obj.name || 'no name',
+        'executionLabelExpression': obj.executionLabelExpression || 'no execution label expression',
+        'mediaConversionTemplateExpression': obj.mediaConversionTemplateExpression || 'no media conversion template expression',
+        'targetContentTemplateExpression': obj.targetContentTemplateExpression || 'no target content tempalte expression',
+        'sourceFileExpression': obj.sourceFileExpression || 'no source file expression',
+        'pctComplete': obj.pctComplete || 'no pct complete',
+        'resultDataDef': obj.resultDataDef || 'no result data def',
+        'subjectChangePath': obj.subjectChangePath || 'no subject change path',
+        'targetWorkflowId': obj.targetWorkflowId || 'no target workflow id',
+        'type': 'step'
+      }, scope);
     }
+    /**
+         * search through the xml element's children for elements of specified element type
+         *
+         * @param elm
+         * @param name
+         * @returns {Array}
+         */
     function getNamedChildren(elm, name) {
       var ret = [], list = elm.childNodes;
       for (var i = 0; i < list.length; i++) {
@@ -357,6 +428,14 @@ angular.module('graphApp').factory('xmlWorkflowParser', [
       }
       return ret;
     }
+    /**
+         * add a link
+         *
+         * @param fromIndex
+         * @param toIndex
+         * @param condition
+         * @param scope
+         */
     function addLink(fromIndex, toIndex, condition, scope) {
       scope.graphData.links.push({
         'source': fromIndex,
@@ -364,38 +443,61 @@ angular.module('graphApp').factory('xmlWorkflowParser', [
         'condition': condition
       });
     }
-    function addOrGetNodeIndex(name, content, scope) {
-      var exists = -1, nodes = scope.graphData.nodes;
+    /**
+         * create a node or get the index of the existing node
+         *
+         * @param obj
+         * @param scope
+         * @returns {number}
+         */
+    function addOrGetNodeIndex(obj, scope) {
+      var nodes = scope.graphData.nodes;
       for (var i = 0; i < nodes.length; i++) {
-        if (nodes[i].name === name) {
-          if (nodes[i].content === null) {
-            nodes[i].content = content;
-          }
-          exists = i;
+        // the node might have been added by name but not filled with content, synchronize
+        if (nodes[i].name == obj.name) {
+          nodes[i] = obj;
+          return i;
         }
       }
-      if (exists > -1) {
-        // found it already
-        return exists;
-      } else {
-        // add it
-        nodes.push({
-          'name': name,
-          'content': content,
-          'type': 'step'
-        });
-        return nodes.length - 1;
-      }
+      // didn't find it, so add it
+      nodes.push(obj);
+      return nodes.length - 1;
     }
+    /**
+         * PUBLIC METHOD
+         *
+         * parses text into an xml document structure
+         *
+         * @param xmlText
+         * @param scope
+         * @returns {*}
+         */
     var useXML = function (xmlText, scope) {
       var deferred = $q.defer();
       parseUsingXML(deferred, xmlText, scope);
       return deferred.promise;
     };
+    /**
+         * PUBLIC METHOD
+         *
+         * parse as xml, turn into a list
+         *
+         * purpose = idunno
+         *
+         * @param xml
+         * @returns {*}
+         */
     function listifyXMLText(xml) {
       var parser = new DOMParser(), xml = parser.parseFromString(xml, 'text/xml');
       return listifyXMLElement(xml);
     }
+    /**
+         * PUBLIC METHOD
+         *
+         * purpose = i really dunno
+         *
+         * @param xml
+         */
     function listifyXMLElement(xml) {
       var serial = new XMLSerializer(), main = xml.documentElement, children = main.childNodes, attributes = main.attributes;
       alert(serial.serializeToString(main));  //            var ch = [], att = [], name = serial.serializeToString(xml.documentElement);
@@ -418,3 +520,18 @@ angular.module('graphApp').factory('xmlWorkflowParser', [
     };
   }
 ]);
+'use strict';
+function compareJSO(a, b) {
+  var aProps = Object.getOwnPropertyNames(a);
+  var bProps = Object.getOwnPropertyNames(b);
+  if (aProps.length != bProps.length) {
+    return false;
+  }
+  for (var i = 0; i < aProps.length; i++) {
+    var propName = aProps[i];
+    if (a[propName] !== b[propName]) {
+      return false;
+    }
+  }
+  return true;
+}

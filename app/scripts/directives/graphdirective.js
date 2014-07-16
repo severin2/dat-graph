@@ -14,8 +14,8 @@ angular.module('graphApp')
 
                 var forceLayout = d3.layout.force()
                     .friction(.7)
-                    .charge(-1000)
-                    .linkDistance(200)
+                    .charge(-400)
+                    .linkDistance(150)
                     .size([width, height])
                     .on('tick', tick);
 
@@ -114,12 +114,13 @@ angular.module('graphApp')
                     forceLayout.nodes().forEach(function (o, i) {
                         var type = o.type || 'none set';
 
-                        if (type === 'step') {
+                        if (type === 'step' ) {
 
                             o.y += (stepFocus.y - o.y) * k;
                             o.x += (stepFocus.x - o.x) * k;
 
-                        } else if (type === 'def') {
+                        }
+                        else if (type === 'def') {
 
                             o.y += (defFocus.y - o.y) * k;
                             o.x += (defFocus.x - o.x) * k;
